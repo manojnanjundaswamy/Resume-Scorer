@@ -1,0 +1,52 @@
+John Smith
+Software Engineer | john.smith@email.com | +1 (555) 123-4567 | San Francisco, CA
+LinkedIn: linkedin.com/in/johnsmith | GitHub: github.com/johnsmith
+
+PROFESSIONAL SUMMARY
+Experienced Software Engineer with 6+ years of expertise in building scalable backend systems and microservices. Proficient in Java, Spring Boot, Python, and cloud technologies (AWS, GCP). Strong background in distributed systems, REST APIs, and database optimization. Passionate about writing clean, testable code and mentoring junior developers.
+
+WORK EXPERIENCE
+
+Senior Software Engineer | TechCorp Inc. | San Francisco, CA | Jan 2022 – Present
+- Architected and implemented a microservices platform handling 50M+ API requests per day using Java 17, Spring Boot, and Kubernetes
+- Reduced system latency by 40% by redesigning database query patterns and implementing Redis caching layer
+- Led a team of 5 engineers in migrating a monolith to microservices, delivering on time with zero production incidents
+- Designed RESTful APIs consumed by 3 mobile apps and 2 web applications
+- Implemented CI/CD pipelines using Jenkins and GitHub Actions, reducing deployment time by 60%
+- Mentored 3 junior engineers through code reviews and pair programming sessions
+
+Software Engineer | StartupABC | San Jose, CA | Jun 2019 – Dec 2021
+- Built real-time data processing pipeline using Apache Kafka and Spring Boot, processing 1M events per hour
+- Developed recommendation engine using Python and scikit-learn, increasing user engagement by 25%
+- Created comprehensive unit and integration tests achieving 85% code coverage
+- Optimized PostgreSQL queries reducing report generation time from 30s to 2s
+- Collaborated with product and design teams to deliver 4 major features per quarter
+
+Junior Software Engineer | DevSolutions | San Jose, CA | Aug 2017 – May 2019
+- Developed REST APIs using Java Spring MVC framework for e-commerce platform
+- Implemented OAuth 2.0 authentication and JWT-based authorization
+- Created automated test suites using JUnit and Mockito
+- Participated in Agile/Scrum ceremonies and contributed to sprint planning
+
+EDUCATION
+Bachelor of Science in Computer Science | Stanford University | Stanford, CA | 2017
+GPA: 3.8/4.0 | Dean's List (2015, 2016, 2017)
+
+SKILLS
+Programming Languages: Java (Expert), Python (Advanced), TypeScript (Intermediate), Go (Beginner)
+Frameworks: Spring Boot, Spring Security, Spring Data JPA, FastAPI, React
+Databases: PostgreSQL, MySQL, MongoDB, Redis, Elasticsearch
+Cloud & DevOps: AWS (EC2, S3, RDS, Lambda, EKS), GCP (GKE, BigQuery), Docker, Kubernetes, Terraform
+Tools: Git, Jenkins, GitHub Actions, JIRA, Confluence, IntelliJ IDEA
+
+CERTIFICATIONS
+- AWS Certified Solutions Architect – Associate (2022)
+- Google Cloud Professional Data Engineer (2021)
+- Oracle Certified Professional Java SE 11 Developer (2020)
+
+PROJECTS
+Open Source Contributor – Apache Kafka
+- Contributed 3 bug fixes and 1 performance improvement to Apache Kafka project (2500+ GitHub stars on fork)
+
+ResumeAI Tool (Personal Project)
+- Built a full-stack resume analysis tool using Spring Boot, React, and OpenAI API with 500+ active users

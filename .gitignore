@@ -1,0 +1,38 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+springboot-backend/apache-maven-*/
+springboot-backend/maven.zip
+
+# Node / Vite
+node_modules/
+dist/
+
+# Logs and runtime output
+*.log
+run-*.out.log
+run-*.err.log
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Old/local workspace folders not part of this GitHub app
+.claude/
+.venv/
+backend/
+frontend/
+nvidia-claudecode/
