@@ -1,219 +1,295 @@
-# ResumeScore AI — Local Setup Guide
+﻿# Local Setup Guide
 
-Three terminals. Everything runs locally. No AWS account needed.
+This guide runs the current ResumeScore AI app locally on Windows using:
 
----
+- `springboot-backend` for the Java/Spring Boot API
+- `web-app` for the React/Vite UI
+- Docker Compose for PostgreSQL and MinIO
 
 ## Prerequisites
 
-Install these if you don't have them:
+Install these first:
 
-| Tool | Check | Install |
+| Tool | Check command | Required |
 |---|---|---|
-| Docker Desktop | `docker --version` | https://docs.docker.com/desktop/windows/ |
-| Java 21 | `java -version` | https://adoptium.net (Eclipse Temurin 21) |
-| Node.js 18+ | `node --version` | https://nodejs.org |
+| Java | `java -version` | Java 21 |
+| Docker Desktop | `docker --version` | Needed for PostgreSQL and MinIO |
+| Node.js | `node --version` | Node 18 or newer |
+| npm | `npm --version` | Comes with Node |
+| Git | `git --version` | For source control |
 
-**Verify Java 21 specifically** — the backend requires Java 21:
+## 1. Configure The Backend
+
+Create a backend env file from the example:
+
+```powershell
+Copy-Item springboot-backend\.env.example springboot-backend\.env
 ```
-java -version
-# Should show: openjdk version "21.x.x" or similar
+
+Open `springboot-backend/.env` and review the values.
+
+For the easiest first run, use mock AI:
+
+```env
+ACTIVE_AI_PROVIDER=MOCK
 ```
 
----
+Mock mode returns deterministic test analysis and does not require a real AI API key.
 
-## Step 1 — Add your AI API key
-
-Open `springboot-backend/.env` in any text editor and add your key:
+For real AI analysis, set one provider and its key:
 
 ```env
 ACTIVE_AI_PROVIDER=CLAUDE
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
-**Where to get keys:**
-- Claude (recommended): https://console.anthropic.com → API Keys
-- OpenAI: https://platform.openai.com/api-keys
-- Gemini: https://aistudio.google.com/app/apikey
-- OpenRouter (access all models): https://openrouter.ai/keys
+Other supported provider values:
 
-You only need **one** key. Leave the others blank.
+```env
+ACTIVE_AI_PROVIDER=GEMINI
+GEMINI_API_KEY=your-gemini-api-key
 
----
+ACTIVE_AI_PROVIDER=OPENAI
+OPENAI_API_KEY=your-openai-api-key
 
-## Step 2 — Start Docker services (Postgres + MinIO)
-
-Open **Terminal 1** in `springboot-backend/`:
-
-```bash
-cd "D:\Claude_Playground\Resume Scorer\springboot-backend"
-
-docker compose up postgres minio minio-init -d
+ACTIVE_AI_PROVIDER=OPENROUTER
+OPENROUTER_API_KEY=your-openrouter-api-key
 ```
 
-**Wait ~15 seconds**, then verify:
-```bash
-docker compose ps
+Keep these local MinIO values for normal local development:
+
+```env
+S3_ENDPOINT=http://localhost:9000
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_NAME=resumescorer-files
 ```
 
-You should see `postgres` and `minio` as **healthy**. If `minio-init` shows `exited (0)` — that's correct, it just creates the bucket and exits.
+## 2. Configure The Web App
 
-**MinIO console** (optional — view uploaded files):
-→ http://localhost:9001
-→ Login: `minioadmin` / `minioadmin`
+Create a frontend env file:
 
----
-
-## Step 3 — Run the Spring Boot backend
-
-Open **Terminal 2** in `springboot-backend/`:
-
-```bash
-cd "D:\Claude_Playground\Resume Scorer\springboot-backend"
-
-.\mvnw.cmd spring-boot:run
+```powershell
+Copy-Item web-app\.env.example web-app\.env.local
 ```
 
-> **First run**: Maven downloads ~150 MB of dependencies. This takes 2–5 minutes. Subsequent starts are fast.
+Open `web-app/.env.local` and set your Google OAuth client ID:
 
-**Successful startup looks like:**
-```
-INFO  c.r.ResumeScorerApplication - Started ResumeScorerApplication in 3.4 seconds
+```env
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+VITE_API_URL=
 ```
 
-**Verify it's running:**
-```bash
+Leave `VITE_API_URL` empty for local dev. Vite proxies `/api` to `http://localhost:8080`.
+
+## 3. Google Sign-In Setup
+
+The web app login uses Google Identity Services. To create a local client ID:
+
+1. Go to Google Cloud Console.
+2. Open APIs and Services > Credentials.
+3. Create OAuth client ID.
+4. Choose Web application.
+5. Add JavaScript origin: `http://localhost:5173`.
+6. Add redirect URI: `http://localhost:5173`.
+7. Copy the client ID into both env files:
+
+```env
+# springboot-backend/.env
+GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+
+# web-app/.env.local
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+```
+
+Restart the backend after changing `springboot-backend/.env`.
+
+## 4. Start Infrastructure And Backend
+
+From the repository root:
+
+```powershell
+.\start-local.ps1
+```
+
+The script checks Java, Docker, and Node, starts PostgreSQL and MinIO, then runs the Spring Boot API. Keep this terminal open.
+
+Manual equivalent:
+
+```powershell
+cd springboot-backend
+docker compose up postgres minio -d
+.\start-local.ps1
+```
+
+Backend URL:
+
+```text
+http://localhost:8080
+```
+
+Health check:
+
+```powershell
 curl http://localhost:8080/api/health
-# Response: {"status":"ok"}
 ```
 
-> **Flyway note**: On first run, Flyway automatically creates all 4 database tables. You'll see log lines like `Migrating schema "public" to version 1 - create users`.
+Expected response:
 
----
-
-## Step 4 — Set up Google Sign-In (for the web app login)
-
-You need a Google OAuth client ID to test login. This takes 3 minutes:
-
-1. Go to https://console.cloud.google.com
-2. Create a project (or use existing)
-3. APIs & Services → **Credentials** → Create Credentials → **OAuth client ID**
-4. Application type: **Web application**
-5. Authorised JavaScript origins: add `http://localhost:5173`
-6. Authorised redirect URIs: add `http://localhost:5173`
-7. Copy the **Client ID**
-
-Then add it to two files:
-
-**`springboot-backend/.env`:**
-```env
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```json
+{"status":"ok"}
 ```
 
-**`web-app/.env.local`:**
-```env
-VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-```
+## 5. Start The Web App
 
-Restart the Spring Boot server after editing `.env`.
+Open a second terminal:
 
-> **Skip for now?** You can test the backend directly with curl (see Step 5) without setting up Google auth.
-
----
-
-## Step 5 — Run the web app
-
-Open **Terminal 3** in `web-app/`:
-
-```bash
-cd "D:\Claude_Playground\Resume Scorer\web-app"
-
+```powershell
+cd web-app
 npm install
 npm run dev
 ```
 
-Open → **http://localhost:5173**
+Open:
 
----
-
-## Testing without a browser (curl smoke tests)
-
-These let you verify the backend works before setting up Google auth.
-
-**Health check:**
-```bash
-curl http://localhost:8080/api/health
+```text
+http://localhost:5173
 ```
 
-**Sign in (get a JWT):**
-```bash
-# First get a real Google ID token by signing in via the web app,
-# then copy it from DevTools → Network → /api/auth/google → request body
-curl -X POST http://localhost:8080/api/auth/google \
-  -H "Content-Type: application/json" \
-  -d '{"idToken":"YOUR_GOOGLE_ID_TOKEN"}'
+Proxy check:
+
+```powershell
+curl http://localhost:5173/api/health
 ```
 
-**Upload a resume (with JWT from above):**
-```bash
-curl -X POST http://localhost:8080/api/analyze \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -F "resume=@/path/to/your_resume.pdf"
+Expected response:
+
+```json
+{"status":"ok"}
 ```
 
----
+## 6. First User Flow
 
-## What each service does
+1. Open `http://localhost:5173`.
+2. Sign in with Google.
+3. New users receive the configured welcome credits.
+4. Upload a PDF, DOC, DOCX, or TXT resume up to 10 MB.
+5. Optionally paste a job description.
+6. Submit the analysis. It costs 1 credit.
+7. View results and history.
 
-| Service | URL | Purpose |
+## Supported Resume Files
+
+| Format | Extensions | Notes |
 |---|---|---|
-| Spring Boot API | http://localhost:8080 | REST API + AI analysis |
-| React web app | http://localhost:5173 | Browser UI |
-| PostgreSQL | localhost:5432 | Database |
-| MinIO (S3) | http://localhost:9000 | File storage (resume PDFs) |
-| MinIO Console | http://localhost:9001 | Browse stored files |
+| PDF | `.pdf` | Text PDFs only; scanned image PDFs need OCR first |
+| Word | `.doc`, `.docx` | Parsed through Apache POI |
+| Text | `.txt` | Parsed as UTF-8 text |
 
----
+## Payment Setup
+
+The app includes Razorpay credit purchase endpoints and a frontend top-up modal. For local testing of payments, set:
+
+```env
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+```
+
+Payment plans are served from:
+
+```text
+GET /api/payment/plans
+```
+
+You can still run analysis without Razorpay if users have free/welcome credits or you use the dev top-up endpoint with a valid JWT.
+
+## Useful Commands
+
+```powershell
+# Backend build
+cd springboot-backend
+.\mvnw.cmd -q -DskipTests package
+
+# Frontend build
+cd web-app
+npm run build
+
+# Docker status
+cd springboot-backend
+docker compose ps
+
+# Stop infrastructure
+cd springboot-backend
+docker compose down
+
+# Stop and delete local database/storage volumes
+cd springboot-backend
+docker compose down -v
+```
 
 ## Troubleshooting
 
-**`Error: JAVA_HOME not set` or `java version "11"`**
-→ You need Java 21. Download from https://adoptium.net, install, then set JAVA_HOME:
-```
-setx JAVA_HOME "C:\Program Files\Eclipse Adoptium\jdk-21.x.x-hotspot"
-```
-Restart your terminal after setting it.
+### Port already in use
 
-**`Flyway migration failed`**
-→ Check PostgreSQL is running: `docker compose ps`
-→ Check connection in `.env`: `DATABASE_URL=jdbc:postgresql://localhost:5432/resumescorer`
+Check the process:
 
-**`AI provider error`**
-→ Check your API key in `.env` is correct and has credits
-→ Check `ACTIVE_AI_PROVIDER` matches the key you provided
-
-**`S3 upload failed`**
-→ Make sure MinIO is running: `docker compose ps`
-→ Verify the bucket exists: http://localhost:9001 → Buckets → `resumescorer-files`
-→ If bucket missing: `docker compose up minio-init`
-
-**Port already in use**
-→ PostgreSQL: `netstat -ano | findstr :5432` → kill or change port in docker-compose
-→ Spring Boot: `netstat -ano | findstr :8080` → change `server.port` in application.properties
-→ Vite: `netstat -ano | findstr :5173` → runs on next free port automatically
-
-**Stopping everything**
-```bash
-# Terminal 1 — stop Docker services
-docker compose down
-
-# Terminal 2 — Ctrl+C stops Spring Boot
-
-# Terminal 3 — Ctrl+C stops Vite
+```powershell
+Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 8080,5173,5432,9000,9001 }
 ```
 
-**Nuke and restart from scratch (wipes database + MinIO data):**
-```bash
-docker compose down -v   # -v removes volumes (all data)
-docker compose up postgres minio minio-init -d
+Default ports:
+
+- Backend: `8080`
+- Frontend: `5173`
+- PostgreSQL: `5432`
+- MinIO: `9000` and `9001`
+
+### Backend cannot connect to database
+
+Make sure Docker services are healthy:
+
+```powershell
+cd springboot-backend
+docker compose ps
 ```
+
+Check `springboot-backend/.env`:
+
+```env
+DATABASE_URL=jdbc:postgresql://localhost:5432/resumescorer
+DATABASE_USERNAME=resumescorer
+DATABASE_PASSWORD=resumescorer_dev
+```
+
+### S3 or upload errors
+
+For local dev, make sure MinIO is running and these values are present:
+
+```env
+S3_ENDPOINT=http://localhost:9000
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_NAME=resumescorer-files
+```
+
+The backend creates the bucket on startup if it is missing.
+
+### AI provider errors
+
+Use mock mode first:
+
+```env
+ACTIVE_AI_PROVIDER=MOCK
+```
+
+If using a real provider, confirm that `ACTIVE_AI_PROVIDER` matches the key you configured.
+
+### Google login fails
+
+Check both files have the same OAuth client ID:
+
+- `springboot-backend/.env`
+- `web-app/.env.local`
+
+Also confirm the Google OAuth client allows `http://localhost:5173` as a JavaScript origin.

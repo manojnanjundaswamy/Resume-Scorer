@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -9,8 +9,11 @@ export default function LoginPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1054885293386-2679ksoq0ksra773b2rq7a3k8c7si28h.apps.googleusercontent.com'
-    if (!clientId) return
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    if (!clientId || clientId.includes('your-google-oauth-client-id')) {
+      setError('Google Sign-In is not configured. Set VITE_GOOGLE_CLIENT_ID in web-app/.env.local.')
+      return
+    }
 
     const initializeGoogle = () => {
       if (!window.google || !window.google.accounts) {
@@ -47,7 +50,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
-      {/* Logo + headline */}
       <div className="text-center mb-10">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-500/20 mb-4">
           <svg className="w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -59,17 +61,14 @@ export default function LoginPage() {
         <p className="text-slate-400 text-lg">Score your resume. Land your dream job.</p>
       </div>
 
-      {/* Card */}
       <div className="w-full max-w-sm bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl">
         <h2 className="text-xl font-semibold text-white text-center mb-1">Get started free</h2>
         <p className="text-slate-400 text-sm text-center mb-6">3 free analyses on sign-up. No credit card.</p>
 
-        {/* Google Sign-In */}
         <div className="flex justify-center mb-4">
           <div ref={googleBtnRef} />
         </div>
 
-        {/* Divider */}
         <div className="relative my-5">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-700" />
@@ -79,7 +78,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Apple Sign-In placeholder */}
         <button
           onClick={() => setError('Apple Sign-In is available in the mobile app.')}
           className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-100 transition-colors"
@@ -102,15 +100,14 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Feature bullets */}
       <div className="mt-10 grid grid-cols-3 gap-6 max-w-sm text-center">
         {[
-          { icon: '🎯', label: 'AI Score 0–100' },
-          { icon: '💡', label: 'Fix Suggestions' },
-          { icon: '💼', label: 'Job Matches' },
+          { icon: '100', label: 'AI Score 0-100' },
+          { icon: 'Fix', label: 'Fix Suggestions' },
+          { icon: 'Jobs', label: 'Job Matches' },
         ].map(({ icon, label }) => (
           <div key={label} className="text-slate-400">
-            <div className="text-2xl mb-1">{icon}</div>
+            <div className="text-sm font-bold text-brand-500 mb-1">{icon}</div>
             <p className="text-xs">{label}</p>
           </div>
         ))}

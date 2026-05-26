@@ -1,180 +1,168 @@
-# ResumeScore AI — Spring Boot Backend
+﻿# ResumeScore AI Backend
 
-Production-grade Java 21 / Spring Boot 3.3 API powering the ResumeScore AI app.
+Spring Boot backend for ResumeScore AI.
 
----
+The API handles authentication, resume uploads, credit accounting, AI analysis orchestration, result history, local/remote file storage, and Razorpay credit purchases.
 
-## Tech Stack
+## Stack
 
-| Layer | Technology |
+| Area | Technology |
 |---|---|
-| Runtime | Java 21, Spring Boot 3.3 |
-| Database | PostgreSQL 16, Flyway migrations |
-| ORM | Spring Data JPA + Hibernate |
-| Security | Spring Security, JJWT 0.12, Google/Apple token verification |
-| AI | Pluggable: Claude (Anthropic), Gemini, OpenAI, OpenRouter |
-| File storage | AWS S3 (SDK v2) |
-| HTTP client | OkHttp 4 |
-| Build | Maven 3, Docker |
+| Runtime | Java 21 |
+| Framework | Spring Boot 3.3 |
+| Database | PostgreSQL 16 |
+| Migrations | Flyway |
+| Persistence | Spring Data JPA / Hibernate |
+| Security | Spring Security, JJWT, Google/Apple token verification |
+| AI providers | Claude, Gemini, OpenAI, OpenRouter, Mock |
+| Resume parsing | PDFBox, Apache POI, plain text |
+| Storage | AWS S3 SDK v2, MinIO for local dev |
+| Payments | Razorpay |
+| Build | Maven wrapper, Docker |
 
----
+## Local Development
 
-## Quick Start (Docker)
+From the repository root, the recommended command is:
 
-```bash
-# 1. Copy env template and fill in your keys
-cp .env.example .env
+```powershell
+.\start-local.ps1
+```
 
-# 2. Start Postgres + API
-docker compose up --build
+From this folder only:
 
-# 3. API is live at http://localhost:8080
+```powershell
+Copy-Item .env.example .env
+notepad .env
+
+docker compose up postgres minio -d
+.\start-local.ps1
+```
+
+The API starts at:
+
+```text
+http://localhost:8080
+```
+
+Health check:
+
+```powershell
 curl http://localhost:8080/api/health
 ```
 
----
+Expected response:
 
-## Quick Start (Local / IDE)
-
-### Prerequisites
-- Java 21 (e.g. Eclipse Temurin)
-- Maven 3.9+
-- PostgreSQL 16 running locally
-
-### 1. Create database
-
-```sql
-CREATE DATABASE resumescorer;
-CREATE USER resumescorer WITH PASSWORD 'resumescorer_dev';
-GRANT ALL PRIVILEGES ON DATABASE resumescorer TO resumescorer;
+```json
+{"status":"ok"}
 ```
 
-### 2. Configure environment
+## Environment
 
-Set these environment variables (or add them to your IDE run config):
+Copy `.env.example` to `.env`. Do not commit `.env`.
 
+Use mock AI for first-time setup:
+
+```env
+ACTIVE_AI_PROVIDER=MOCK
 ```
-DATABASE_URL=jdbc:postgresql://localhost:5432/resumescorer
-DATABASE_USERNAME=resumescorer
-DATABASE_PASSWORD=resumescorer_dev
 
+Use a real provider when ready:
+
+```env
 ACTIVE_AI_PROVIDER=CLAUDE
 ANTHROPIC_API_KEY=your-anthropic-api-key
-
-JWT_SECRET=at_least_32_random_characters_here
-
-GOOGLE_CLIENT_ID=your-google-oauth-client-id
-
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-S3_BUCKET_NAME=resumescorer-uploads
 ```
 
-### 3. Run
+Supported values:
 
-```bash
-mvn spring-boot:run
+| Value | Required key |
+|---|---|
+| `MOCK` | None |
+| `CLAUDE` | `ANTHROPIC_API_KEY` |
+| `GEMINI` | `GEMINI_API_KEY` |
+| `OPENAI` | `OPENAI_API_KEY` |
+| `OPENROUTER` | `OPENROUTER_API_KEY` |
+
+For local MinIO storage, keep:
+
+```env
+S3_ENDPOINT=http://localhost:9000
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_NAME=resumescorer-files
 ```
 
-Flyway runs migrations automatically on startup. The API is ready at `http://localhost:8080`.
+## Docker Compose
 
----
+For local development, run only infrastructure in Docker:
 
-## Switching AI Providers
+```powershell
+docker compose up postgres minio -d
+```
 
-Set `ACTIVE_AI_PROVIDER` to any of:
+For full Docker mode, including the API image:
 
-| Value | Provider | Required key |
-|---|---|---|
-| `CLAUDE` | Anthropic Claude | `ANTHROPIC_API_KEY` |
-| `GEMINI` | Google Gemini | `GEMINI_API_KEY` |
-| `OPENAI` | OpenAI | `OPENAI_API_KEY` |
-| `OPENROUTER` | OpenRouter | `OPENROUTER_API_KEY` |
-
-No other code changes needed — the factory wires the correct provider automatically.
-
----
+```powershell
+docker compose --profile full up --build
+```
 
 ## API Reference
 
-### Auth
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| POST | `/api/auth/google` | `{ "idToken": "..." }` | Sign in with Google |
-| POST | `/api/auth/apple` | `{ "identityToken": "..." }` | Sign in with Apple |
-
-Both return `{ "token": "<JWT>", "user": { ... } }`.
-
-### Users
-
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/users/me` | Bearer JWT | Get profile + credit balance |
+| `GET` | `/api/health` | No | Liveness check |
+| `GET` | `/actuator/health` | No | Spring actuator health |
+| `POST` | `/api/auth/google` | No | Body: `{ "idToken": "..." }` |
+| `POST` | `/api/auth/apple` | No | Body: `{ "identityToken": "...", "fullName": "..." }` |
+| `GET` | `/api/users/me` | Bearer JWT | Current profile and credits |
+| `POST` | `/api/analyze` | Bearer JWT | Multipart field `resume`, optional `jobDescription` |
+| `GET` | `/api/results/{id}` | Bearer JWT | Fetch one stored analysis |
+| `GET` | `/api/history` | Bearer JWT | Fetch user's analysis history |
+| `POST` | `/api/credits/topup` | Bearer JWT | Dev/manual credit top-up |
+| `GET` | `/api/payment/plans` | No | List credit purchase plans |
+| `POST` | `/api/payment/create-order` | Bearer JWT | Create Razorpay order |
+| `POST` | `/api/payment/verify` | Bearer JWT | Verify Razorpay payment and add credits |
 
-### Analysis
+### Resume Analysis Request
 
-| Method | Path | Auth | Body | Description |
-|---|---|---|---|---|
-| POST | `/api/analyze` | Bearer JWT | multipart: `file` (PDF/DOCX), optional `jobDescription` | Run 3-pass AI analysis |
-| GET | `/api/results/{id}` | Bearer JWT | — | Fetch a single analysis |
-| GET | `/api/history` | Bearer JWT | — | List user's past analyses |
-| POST | `/api/credits/topup` | Bearer JWT | `{ "amount": 5 }` | Add credits (post-payment hook) |
-
-### Health
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/health` | Unauthenticated liveness check |
-| GET | `/actuator/health` | Spring Actuator health |
-
----
-
-## Project Structure
-
+```powershell
+curl -X POST http://localhost:8080/api/analyze `
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" `
+  -F "resume=@C:\path\to\resume.pdf" `
+  -F "jobDescription=Optional pasted job description"
 ```
+
+Supported upload types:
+
+- `.pdf`
+- `.doc`
+- `.docx`
+- `.txt`
+
+Max upload size is configured in `application.properties` as 10 MB per file and 12 MB per request.
+
+## Main Packages
+
+```text
 src/main/java/com/resumescorer/
-├── config/              # SecurityConfig, AwsConfig
-├── controller/          # REST controllers
-├── exception/           # Custom exceptions + GlobalExceptionHandler
-├── model/
-│   ├── dto/             # AnalysisResult (response POJO)
-│   └── entity/          # JPA entities (User, Resume, Analysis, CreditTransaction)
-├── repository/          # Spring Data JPA interfaces
-├── security/            # JWT filter/provider, Google/Apple verifiers, @CurrentUser
-└── service/
-    ├── ai/
-    │   ├── pipeline/    # AnalysisPipeline (3-pass orchestration)
-    │   └── providers/   # Claude, Gemini, OpenAI, OpenRouter implementations
-    ├── storage/         # S3 upload/delete
-    ├── AnalysisService  # Main orchestration service
-    ├── CreditService    # Credit grant/deduct/topup
-    └── ResumeParserService  # PDF/DOCX text extraction
-
-src/main/resources/
-├── application.properties
-└── db/migration/        # Flyway SQL migrations (V1–V4)
+|-- config/       # Security, CORS, S3, bucket initialization
+|-- controller/   # Auth, analysis, user, payment APIs
+|-- exception/    # API exceptions and global handler
+|-- model/        # DTOs and JPA entities
+|-- repository/   # Spring Data repositories
+|-- security/     # JWT, current user resolver, OAuth token verifiers
+`-- service/      # Analysis, credits, payments, parsing, storage, AI providers
 ```
 
----
+Database migrations live in:
 
-## Deployment
+```text
+src/main/resources/db/migration/
+```
 
-### Railway (Phase 1 — simplest)
+## Verification
 
-1. Push to GitHub
-2. Create Railway project → Deploy from GitHub
-3. Add PostgreSQL plugin
-4. Set environment variables in Railway dashboard
-5. Railway auto-builds the Docker image and deploys
-
-### AWS ECS (Phase 2)
-
-1. Push image to ECR: `docker build -t resumescorer-api . && docker push`
-2. Create ECS task definition with the image + env vars
-3. Set up Application Load Balancer → ECS service
-4. Use RDS PostgreSQL for the database
-5. S3 bucket with IAM role attached to ECS task (no static keys needed)
-
-See the Notion planner for the full deployment runbook.
+```powershell
+.\mvnw.cmd -q -DskipTests package
+curl http://localhost:8080/api/health
+```

@@ -1,157 +1,163 @@
-# ResumeScore AI 🚀
+﻿# ResumeScore AI
 
-An AI-powered resume analyzer that scores your resume, highlights strengths and weaknesses, recommends matching jobs, and generates tailored interview questions.
+ResumeScore AI is a full-stack resume analysis app. It lets users sign in, upload a resume, optionally paste a job description, spend credits, and receive an AI-generated resume score with strengths, gaps, keywords, job-fit guidance, and interview preparation help.
 
-## Features
+This repository contains the current app in these two folders:
 
-- **AI Resume Scoring** — 0–100 score with letter grade (powered by GPT-4o)
-- **6 Category Scores** — Format, Content, ATS Optimization, Skills, Experience, Education
-- **Strengths & Weaknesses** — Specific, actionable feedback
-- **Keyword Analysis** — Found keywords + missing keywords for ATS
-- **Job Recommendations** — Matched roles with LinkedIn, Indeed, Glassdoor, Google Jobs links
-- **Interview Questions** — Technical, behavioral, and HR questions tailored to your resume
-- **Improvement Action Plan** — Prioritized suggestions (High / Medium / Low)
-- **Mobile Responsive** — Works on phones, tablets, and desktops
+- `springboot-backend` - Java 21 / Spring Boot API
+- `web-app` - React 18 / Vite browser app
 
----
+The older `backend` and `frontend` folders are not part of this repo's current application.
 
-## Prerequisites
+## What Is Included
 
-- [Node.js](https://nodejs.org/) v18 or higher
-- An [OpenAI API key](https://platform.openai.com/api-keys) (GPT-4o access required)
+### Backend
 
----
+- Spring Boot 3.3 REST API on `http://localhost:8080`
+- PostgreSQL persistence with Flyway migrations
+- JWT-based application sessions
+- Google and Apple token verification endpoints
+- Resume upload and parsing for PDF, DOC, DOCX, and TXT
+- S3-compatible file storage using AWS S3 or local MinIO
+- Credit accounting with welcome credits and top-ups
+- Razorpay payment order creation and verification
+- Pluggable AI providers: `CLAUDE`, `GEMINI`, `OPENAI`, `OPENROUTER`, and `MOCK`
+- Health endpoint: `GET /api/health`
 
-## Setup & Installation
+### Frontend
 
-### 1. Install backend dependencies
+- React 18 app served by Vite on `http://localhost:5173`
+- Google Sign-In flow
+- Protected app routes for upload, analyzing, results, and history
+- Resume upload UI with optional job description input
+- Credit display and Razorpay top-up modal
+- Vite dev proxy from `/api` to `http://localhost:8080`
 
-```bash
-cd backend
+## Quick Start
+
+For the complete Windows local setup, read [LOCAL_SETUP.md](LOCAL_SETUP.md).
+
+Short version:
+
+```powershell
+# 1. Configure backend environment
+Copy-Item springboot-backend\.env.example springboot-backend\.env
+notepad springboot-backend\.env
+
+# 2. Configure frontend environment
+Copy-Item web-app\.env.example web-app\.env.local
+notepad web-app\.env.local
+
+# 3. Start database/storage and backend
+.\start-local.ps1
+
+# 4. In a second terminal, start the web app
+cd web-app
 npm install
-```
-
-### 2. Configure your OpenAI API key
-
-```bash
-# In the backend folder:
-copy .env.example .env        # Windows
-# OR
-cp .env.example .env          # Mac/Linux
-```
-
-Then open `backend/.env` and replace the placeholder with your actual key:
-```
-OPENAI_API_KEY=sk-your-real-key-here
-PORT=3001
-```
-
-### 3. Install frontend dependencies
-
-```bash
-cd ../frontend
-npm install
-```
-
----
-
-## Running the App
-
-You need **two terminal windows** running simultaneously.
-
-**Terminal 1 — Start the backend:**
-```bash
-cd backend
 npm run dev
 ```
-You should see: `✅ Resume Scorer backend running on http://localhost:3001`
 
-**Terminal 2 — Start the frontend:**
-```bash
-cd frontend
-npm run dev
+Open `http://localhost:5173`.
+
+## Recommended Local AI Mode
+
+For first-time setup, use the mock AI provider so the app can run without an external AI key:
+
+```env
+ACTIVE_AI_PROVIDER=MOCK
 ```
-You should see the app URL, usually `http://localhost:5173`
 
-**Open your browser** at `http://localhost:5173` and you're ready to go!
+Use a real provider when you want live analysis:
 
----
+```env
+ACTIVE_AI_PROVIDER=CLAUDE
+ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+
+Supported providers are `MOCK`, `CLAUDE`, `GEMINI`, `OPENAI`, and `OPENROUTER`.
+
+## Services And Ports
+
+| Service | URL | Notes |
+|---|---|---|
+| React web app | `http://localhost:5173` | Browser UI |
+| Spring Boot API | `http://localhost:8080` | REST API |
+| API health | `http://localhost:8080/api/health` | Returns `{ "status": "ok" }` |
+| PostgreSQL | `localhost:5432` | Docker service |
+| MinIO API | `http://localhost:9000` | Local S3-compatible storage |
+| MinIO console | `http://localhost:9001` | Login: `minioadmin` / `minioadmin` |
+
+## API Overview
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/health` | No | Health check |
+| `POST` | `/api/auth/google` | No | Exchange Google ID token for app JWT |
+| `POST` | `/api/auth/apple` | No | Exchange Apple identity token for app JWT |
+| `GET` | `/api/users/me` | Yes | Current user and credits |
+| `POST` | `/api/analyze` | Yes | Upload resume as multipart field `resume`; optional `jobDescription` |
+| `GET` | `/api/results/{id}` | Yes | Fetch one analysis result |
+| `GET` | `/api/history` | Yes | Fetch analysis history |
+| `POST` | `/api/credits/topup` | Yes | Manual/dev credit top-up |
+| `GET` | `/api/payment/plans` | No | List Razorpay plans |
+| `POST` | `/api/payment/create-order` | Yes | Create Razorpay order |
+| `POST` | `/api/payment/verify` | Yes | Verify payment and add credits |
 
 ## Project Structure
 
-```
+```text
 Resume Scorer/
-├── backend/
-│   ├── server.js          # Express API server
-│   ├── package.json
-│   ├── .env.example       # Copy to .env and add your API key
-│   └── .env               # Your secrets (never commit this!)
-│
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx                        # Root component & stage management
-│   │   ├── components/
-│   │   │   ├── UploadZone.jsx             # Drag & drop file upload
-│   │   │   ├── AnalyzingScreen.jsx        # Loading/progress screen
-│   │   │   ├── Dashboard.jsx             # Main results dashboard
-│   │   │   ├── ScoreGauge.jsx            # Animated circular score
-│   │   │   ├── CategoryScores.jsx        # 6-category bar charts
-│   │   │   ├── StrengthsWeaknesses.jsx   # Strengths, gaps & keywords
-│   │   │   ├── JobRecommendations.jsx    # Job matches with apply links
-│   │   │   ├── InterviewQuestions.jsx    # Technical/behavioral/HR questions
-│   │   │   └── ImprovementTips.jsx       # Prioritized action plan
-│   │   └── index.css
-│   ├── vite.config.js     # Proxies /api → localhost:3001
-│   └── package.json
-│
-└── README.md
+|-- README.md
+|-- LOCAL_SETUP.md
+|-- start-local.ps1
+|-- springboot-backend/
+|   |-- pom.xml
+|   |-- docker-compose.yml
+|   |-- Dockerfile
+|   |-- start-local.ps1
+|   |-- src/main/java/com/resumescorer/
+|   |   |-- config/
+|   |   |-- controller/
+|   |   |-- exception/
+|   |   |-- model/
+|   |   |-- repository/
+|   |   |-- security/
+|   |   `-- service/
+|   `-- src/main/resources/db/migration/
+`-- web-app/
+    |-- package.json
+    |-- vite.config.js
+    |-- src/api/
+    |-- src/components/
+    |-- src/context/
+    `-- src/pages/
 ```
 
----
+## Verification Commands
 
-## Supported File Types
+```powershell
+# Backend compile/package
+cd springboot-backend
+.\mvnw.cmd -q -DskipTests package
 
-| Format | Extension |
-|--------|-----------|
-| PDF    | .pdf      |
-| Word   | .docx     |
-| Word (legacy) | .doc |
-| Plain text | .txt  |
+# Frontend production build
+cd ..\web-app
+npm install
+npm run build
 
-Max file size: **10MB**
+# Runtime smoke tests
+curl http://localhost:8080/api/health
+curl http://localhost:5173/api/health
+```
 
----
+## Secrets
 
-## Tech Stack
+Do not commit these files:
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite, Tailwind CSS |
-| Backend | Node.js, Express |
-| AI | OpenAI GPT-4o |
-| PDF parsing | pdf-parse |
-| DOCX parsing | mammoth |
-| Icons | lucide-react |
+- `springboot-backend/.env`
+- `web-app/.env.local`
 
----
+Commit only the example files:
 
-## Common Issues
-
-**"OpenAI API key not configured"**
-→ Make sure you created `backend/.env` from `.env.example` and added your real key.
-
-**"Could not read file"**
-→ Try saving your resume as a standard PDF (not scanned/image-based).
-
-**Backend won't start**
-→ Run `npm install` inside the `backend/` folder first.
-
-**Frontend can't connect to backend**
-→ Make sure the backend is running on port 3001. Check `backend/.env` PORT setting.
-
----
-
-## Cost Estimate
-
-Each resume analysis uses ~1,000–2,000 tokens with GPT-4o.
-At current pricing (~$0.005/1K input tokens), each analysis costs roughly **$0.01–$0.02**.
+- `springboot-backend/.env.example`
+- `web-app/.env.example`

@@ -1,4 +1,4 @@
-# Secrets and local environment
+﻿# Secrets and local environment
 .env
 .env.*
 !.env.example
@@ -9,6 +9,7 @@ target/
 *.jar
 *.war
 *.ear
+!springboot-backend/.mvn/wrapper/maven-wrapper.jar
 springboot-backend/apache-maven-*/
 springboot-backend/maven.zip
 
