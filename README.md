@@ -34,20 +34,24 @@ The older `backend` and `frontend` folders are not part of this repo's current a
 - Vite dev proxy from `/api` to `http://localhost:8080`
 
 ## UI Showcase
-
-| Analyze flow | Resume score overview |
+| Login | Analyze resume screen |
 |---|---|
-| ![Analyze resume screen](web-app/screenshots/Landing_Page.png) | ![Resume analysis overview](web-app/screenshots/Resume_Analysis_Overview.png) |
+| ![Login](web-app/screenshots/Login.png) | ![Analyze resume screen](web-app/screenshots/Landing_Page.png) |
 
-| Improvement plan | Job recommendations |
+
+| Resume analysis overview | Resume improvement suggestions |
 |---|---|
-| ![Resume improvement suggestions](web-app/screenshots/Resume_Analysis_Improvements.png) | ![Job recommendations](web-app/screenshots/Jobs.png) |
+| ![Resume analysis overview](web-app/screenshots/Resume_Analysis_Overview.png) | ![Resume improvement suggestions](web-app/screenshots/Resume_Analysis_Improvements.png) |
 
-| Interview prep | Credits and payments |
+| Job recommendations | Tailored interview questions |
 |---|---|
-| ![Tailored interview questions](web-app/screenshots/Interview.png) | ![Top up credits modal](web-app/screenshots/Top_up_credits.png) |
+| ![Job recommendations](web-app/screenshots/Jobs.png)  |  ![Tailored interview questions](web-app/screenshots/Interview.png)|
 
-Additional screens: ![Login](web-app/screenshots/Login.png) and ![Payment checkout](web-app/screenshots/Payment.png).
+| Payment checkout | Top up credits modal |
+|---|---|
+|![Payment checkout](web-app/screenshots/Payment.png) | ![Top up credits modal](web-app/screenshots/Top_up_credits.png) |
+
+
 
 ## Quick Start
 
