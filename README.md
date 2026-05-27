@@ -47,7 +47,7 @@ The older `backend` and `frontend` folders are not part of this repo's current a
 |---|---|
 | ![Tailored interview questions](web-app/screenshots/Interview.png) | ![Top up credits modal](web-app/screenshots/Top_up_credits.png) |
 
-Additional screens: [Login](web-app/screenshots/Login.png) and [Payment checkout](web-app/screenshots/Payment.png).
+Additional screens: ![Login](web-app/screenshots/Login.png) and ![Payment checkout](web-app/screenshots/Payment.png).
 
 ## Quick Start
 
