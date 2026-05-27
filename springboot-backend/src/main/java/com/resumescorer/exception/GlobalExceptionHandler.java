@@ -1,4 +1,4 @@
-package com.resumescorer.exception;
+﻿package com.resumescorer.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ── Structured error body ────────────────────────────────────────────────
+    // Structured error body
 
     private record ErrorResponse(
             int status,
@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(status.value(), status.getReasonPhrase(), message, Instant.now()));
     }
 
-    // ── Domain exceptions ────────────────────────────────────────────────────
+    // Domain exceptions
 
     @ExceptionHandler(InsufficientCreditsException.class)
     public ResponseEntity<ErrorResponse> handleInsufficientCredits(InsufficientCreditsException ex) {
@@ -48,7 +48,17 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    // ── Validation errors ────────────────────────────────────────────────────
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(IllegalStateException ex) {
+        return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Validation errors
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
@@ -65,14 +75,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    // ── File upload ──────────────────────────────────────────────────────────
+    // File upload
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleFileTooLarge(MaxUploadSizeExceededException ex) {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, "File size exceeds the maximum allowed limit (10 MB).");
     }
 
-    // ── AI / integration errors ──────────────────────────────────────────────
+    // AI / integration errors
 
     @ExceptionHandler(AiProviderException.class)
     public ResponseEntity<ErrorResponse> handleAiProvider(AiProviderException ex) {
@@ -80,7 +90,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_GATEWAY, "The AI analysis service is temporarily unavailable. Please try again.");
     }
 
-    // ── Catch-all ────────────────────────────────────────────────────────────
+    // Catch-all
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
@@ -88,3 +98,4 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
     }
 }
+

@@ -9,6 +9,12 @@ export function AuthProvider({ children }) {
   })
   const [loading, setLoading] = useState(true)
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('rs_token')
+    localStorage.removeItem('rs_user')
+    setUser(null)
+  }, [])
+
   // On mount, validate stored JWT by fetching fresh user data
   useEffect(() => {
     const token = localStorage.getItem('rs_token')
@@ -17,7 +23,7 @@ export function AuthProvider({ children }) {
       .then(setUser)
       .catch(() => logout())
       .finally(() => setLoading(false))
-  }, [])
+  }, [logout])
 
   const saveSession = useCallback((token, userData) => {
     localStorage.setItem('rs_token', token)
@@ -36,12 +42,6 @@ export function AuthProvider({ children }) {
     saveSession(token, userData)
     return userData
   }, [saveSession])
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('rs_token')
-    localStorage.removeItem('rs_user')
-    setUser(null)
-  }, [])
 
   const refreshUser = useCallback(async () => {
     const fresh = await userApi.getMe()

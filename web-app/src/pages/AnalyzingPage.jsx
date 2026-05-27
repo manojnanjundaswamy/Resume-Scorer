@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { analysisApi } from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -53,7 +53,7 @@ export default function AnalyzingPage() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
         <div className="max-w-sm text-center">
-          <div className="text-5xl mb-4">⚠️</div>
+          <div className="text-5xl mb-4 text-red-400">!</div>
           <h2 className="text-xl font-bold text-white mb-2">Analysis Failed</h2>
           <p className="text-slate-400 text-sm mb-6">{error}</p>
           <button
@@ -131,3 +131,5 @@ export default function AnalyzingPage() {
     </div>
   )
 }
+
+

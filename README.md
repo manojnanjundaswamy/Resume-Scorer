@@ -33,6 +33,22 @@ The older `backend` and `frontend` folders are not part of this repo's current a
 - Credit display and Razorpay top-up modal
 - Vite dev proxy from `/api` to `http://localhost:8080`
 
+## UI Showcase
+
+| Analyze flow | Resume score overview |
+|---|---|
+| ![Analyze resume screen](web-app/screenshots/Landing_Page.png) | ![Resume analysis overview](web-app/screenshots/Resume_Analysis_Overview.png) |
+
+| Improvement plan | Job recommendations |
+|---|---|
+| ![Resume improvement suggestions](web-app/screenshots/Resume_Analysis_Improvements.png) | ![Job recommendations](web-app/screenshots/Jobs.png) |
+
+| Interview prep | Credits and payments |
+|---|---|
+| ![Tailored interview questions](web-app/screenshots/Interview.png) | ![Top up credits modal](web-app/screenshots/Top_up_credits.png) |
+
+Additional screens: [Login](web-app/screenshots/Login.png) and [Payment checkout](web-app/screenshots/Payment.png).
+
 ## Quick Start
 
 For the complete Windows local setup, read [LOCAL_SETUP.md](LOCAL_SETUP.md).

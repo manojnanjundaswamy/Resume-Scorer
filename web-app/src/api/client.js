@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Central API client for the Spring Boot backend.
- * Automatically attaches the Bearer JWT and handles 401 → logout.
+ * Automatically attaches the Bearer JWT and logs out on 401 responses.
  */
 
-const BASE = import.meta.env.VITE_API_URL ?? ''  // empty = same origin (dev proxy)
+const BASE = import.meta.env.VITE_API_URL ?? ''
 
 function getToken() {
   return localStorage.getItem('rs_token')
@@ -38,8 +38,6 @@ async function request(path, options = {}) {
   return data
 }
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-
 export const authApi = {
   googleLogin: (idToken) =>
     request('/api/auth/google', {
@@ -54,13 +52,9 @@ export const authApi = {
     }),
 }
 
-// ── User ─────────────────────────────────────────────────────────────────────
-
 export const userApi = {
   getMe: () => request('/api/users/me'),
 }
-
-// ── Analysis ─────────────────────────────────────────────────────────────────
 
 export const analysisApi = {
   analyze: (file, jobDescription) => {
@@ -75,8 +69,6 @@ export const analysisApi = {
   getHistory: () => request('/api/history'),
 }
 
-// ── Credits ──────────────────────────────────────────────────────────────────
-
 export const creditsApi = {
   topup: (amount, reason = 'TOPUP') =>
     request('/api/credits/topup', {
@@ -85,11 +77,8 @@ export const creditsApi = {
     }),
 }
 
-// ── Payment ──────────────────────────────────────────────────────────────────
-
 export const paymentApi = {
-  getPlans: () =>
-    request('/api/payment/plans'),
+  getPlans: () => request('/api/payment/plans'),
 
   createOrder: (planId) =>
     request('/api/payment/create-order', {

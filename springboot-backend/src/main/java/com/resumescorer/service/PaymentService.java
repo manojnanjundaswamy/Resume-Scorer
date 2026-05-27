@@ -1,6 +1,5 @@
-package com.resumescorer.service;
+﻿package com.resumescorer.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resumescorer.exception.ResourceNotFoundException;
 import com.resumescorer.model.entity.PaymentOrder;
 import com.resumescorer.model.entity.User;
@@ -45,11 +44,17 @@ public class PaymentService {
         return env != null ? env : razorpayKeySecret;
     }
 
+    private void assertRazorpayConfigured() {
+        if (getRazorpayKeyId().isBlank() || getRazorpayKeySecret().isBlank()) {
+            throw new IllegalStateException("Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.");
+        }
+    }
+
     private static final Map<String, PlanDefinition> PLANS = Map.ofEntries(
-        Map.entry("pay_as_you_go", new PlanDefinition("pay_as_you_go", 1, 1000, "Pay as you go", "₹10 per credit")),
-        Map.entry("starter_pack", new PlanDefinition("starter_pack", 12, 99 * 100, "Starter Pack", "₹99 for 12 credits")),
-        Map.entry("monthly_basic", new PlanDefinition("monthly_basic", 20, 99 * 100, "Monthly Basic", "₹99/month for 20 credits")),
-        Map.entry("monthly_pro", new PlanDefinition("monthly_pro", 50, 199 * 100, "Monthly Pro", "₹199/month for 50 credits"))
+        Map.entry("pay_as_you_go", new PlanDefinition("pay_as_you_go", 1, 1000, "Pay as you go", "Rs. 10 per credit")),
+        Map.entry("starter_pack", new PlanDefinition("starter_pack", 12, 99 * 100, "Starter Pack", "Rs. 99 for 12 credits")),
+        Map.entry("monthly_basic", new PlanDefinition("monthly_basic", 20, 99 * 100, "Monthly Basic", "Rs. 99/month for 20 credits")),
+        Map.entry("monthly_pro", new PlanDefinition("monthly_pro", 50, 199 * 100, "Monthly Pro", "Rs. 199/month for 50 credits"))
     );
 
     public static class PlanDefinition {
@@ -91,6 +96,8 @@ public class PaymentService {
      */
     @Transactional
     public Map<String, Object> createOrder(User user, String planId) throws Exception {
+        assertRazorpayConfigured();
+
         if (!PLANS.containsKey(planId)) {
             throw new IllegalArgumentException("Invalid plan: " + planId);
         }
@@ -146,7 +153,7 @@ public class PaymentService {
                 "orderId", razorpayOrderId,
                 "amount", plan.amountPaise,
                 "currency", "INR",
-                "key", razorpayKeyId
+                "key", getRazorpayKeyId()
             );
         }
     }
@@ -156,6 +163,8 @@ public class PaymentService {
      */
     @Transactional
     public Map<String, Object> verifyAndCredit(User user, String orderId, String paymentId, String signature) {
+        assertRazorpayConfigured();
+
         PaymentOrder order = paymentOrderRepository.findByRazorpayOrderId(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Payment order not found: " + orderId));
 
@@ -165,7 +174,7 @@ public class PaymentService {
 
         // Verify HMAC-SHA256 signature
         String payload = orderId + "|" + paymentId;
-        String expectedSignature = generateSignature(payload, razorpayKeySecret);
+        String expectedSignature = generateSignature(payload, getRazorpayKeySecret());
 
         if (!expectedSignature.equals(signature)) {
             log.error("Invalid payment signature for orderId={}", orderId);
@@ -186,7 +195,7 @@ public class PaymentService {
         return Map.of(
             "success", true,
             "creditsAdded", order.getCredits(),
-            "creditsRemaining", user.getCreditsRemaining() + order.getCredits()
+            "creditsRemaining", user.getCreditsRemaining()
         );
     }
 
@@ -208,3 +217,4 @@ public class PaymentService {
         }
     }
 }
+
